@@ -1,17 +1,4 @@
-export function getResultDayOnePartOne(useDefinedInput?: string) {
-  const input =
-    useDefinedInput ??
-    `L68
-L30
-R48
-L5
-R60
-L55
-L1
-L99
-R14
-L82`;
-
+export function getResultDayOnePartOne(input: string) {
   const DIAL_STARTING_VALUE = 50;
 
   function parseInput(input: string) {

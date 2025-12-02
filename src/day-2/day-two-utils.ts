@@ -1,50 +1,51 @@
-export function getResultDayOnePartOne(input: string) {
-  const DIAL_STARTING_VALUE = 50
-
+export function getResult(input: string) {
   function parseInput(input: string) {
-    const inputArray = input.split('\n')
-    return inputArray.map((line) => {
-      const direction = line.charAt(0)
-      const value = parseInt(line.slice(1), 10)
-      return { direction, value }
+    const inputArray = input.split(',')
+    return inputArray.map((entry) => {
+      const [startString, endString] = entry.split('-')
+      const start = Number(startString)
+      const end = Number(endString)
+      return { start, end }
     })
   }
 
   const parsedInputs = parseInput(input)
 
-  function turnDial(
-    parsedInput: { direction: string; value: number },
-    currentDial: number,
-  ) {
-    if (parsedInput.direction === 'L') {
-      const newDial = (currentDial - parsedInput.value) % 100
-      if (newDial < 0) {
-        return newDial + 100
-      } else {
-        return newDial
-      }
-    } else if (parsedInput.direction === 'R') {
-      const newDial = (currentDial + parsedInput.value) % 100
-      if (newDial >= 100) {
-        return newDial - 100
-      } else {
-        return newDial
-      }
+  let result = `Results:\n`
+
+  function buildFindingsString(invalidIDs: number[]) {
+    const listingOfInvalidIDs = invalidIDs.join(' and ')
+    if (invalidIDs.length === 0) {
+      return 'contains no invalid IDs.'
+    } else if (invalidIDs.length === 1) {
+      return `has one invalid ID, ${listingOfInvalidIDs}.`
     } else {
-      throw new Error('Invalid direction')
+      return `has ${invalidIDs.length} invalid IDs, ${listingOfInvalidIDs}.`
     }
   }
 
-  let amountOfZeros = 0
-  let result = `- The dial starts at ${DIAL_STARTING_VALUE}.\n`
-  let dial = DIAL_STARTING_VALUE
+  function isInvalidID(id: number): boolean {
+    const idString = id.toString()
+    if (idString.length % 2 !== 0) return false
+    const halfLength = idString.length / 2
+    const firstHalf = idString.slice(0, halfLength)
+    const secondHalf = idString.slice(halfLength)
+    return firstHalf === secondHalf
+  }
+
+  let sumOfInvalidIDs = 0
   parsedInputs.forEach((parsedInput) => {
-    dial = turnDial(parsedInput, dial)
-    if (dial === 0) {
-      amountOfZeros += 1
+    const { start, end } = parsedInput
+    const invalidIDs: number[] = []
+    for (let i = start; i <= end; i++) {
+      if (isInvalidID(i)) {
+        sumOfInvalidIDs += i
+        invalidIDs.push(i)
+      }
     }
-    result += `- The dial is rotated ${parsedInput.direction}${parsedInput.value} to point at ${dial}.\n`
+    const findingsString = buildFindingsString(invalidIDs)
+    result += `- ${start}-${end} ${findingsString}\n`
   })
 
-  return (result += `\n\nBecause the dial points at 0 a total of ${amountOfZeros} times during this process, the password in this example is ${amountOfZeros}.`)
+  return (result += `\n\nAdding up all the invalid IDs in this example produces ${sumOfInvalidIDs}.`)
 }

@@ -15,6 +15,12 @@ export default function DayTwo() {
           Run Example
         </button>
         <button onClick={() => setResult(getResult(input))}>Run Input</button>
+        <button onClick={() => setResult(getResult(exampleInput, true))}>
+          Run Example Part Two
+        </button>
+        <button onClick={() => setResult(getResult(input, true))}>
+          Run Input Part Two
+        </button>
       </div>
       <pre>{result}</pre>
     </section>

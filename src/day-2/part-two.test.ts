@@ -31,6 +31,6 @@ describe('Day Two Part Two', () => {
     expect(getResult(exampleInput, true)).toContain('4174379265')
   })
   it('input test', () => {
-    expect(getResult(input, true)).toContain('11323661305')
+    expect(getResult(input, true)).toContain('11323661261')
   })
 })

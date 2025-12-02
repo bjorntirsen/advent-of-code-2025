@@ -1,4 +1,39 @@
-export function getResult(input: string) {
+export function numberToDigitsArray(num: number): number[] {
+  return num
+    .toString()
+    .split('')
+    .map((digit) => parseInt(digit, 10))
+}
+
+export function possibleRepeatChunkSizes(num: number): number[] {
+  const s = num.toString()
+  const len = s.length
+
+  const result: number[] = []
+
+  // chunk sizes must divide the length
+  for (let size = 2; size <= Math.floor(len / 2); size++) {
+    if (len % size !== 0) continue
+    result.push(size)
+  }
+
+  return result
+}
+
+function repeatsForChunkSize(num: number, size: number): boolean {
+  const s = num.toString()
+  const first = s.slice(0, size)
+
+  for (let i = size; i < s.length; i += size) {
+    if (s.slice(i, i + size) !== first) {
+      return false
+    }
+  }
+
+  return true
+}
+
+export function getResult(input: string, isPartTwo = false) {
   function parseInput(input: string) {
     const inputArray = input.split(',')
     return inputArray.map((entry) => {
@@ -24,6 +59,21 @@ export function getResult(input: string) {
     }
   }
 
+  function isInvalidIDPartTwo(id: number) {
+    const idArray = numberToDigitsArray(id)
+    // If all digits are the same, it's invalid
+    if (idArray.every((digit) => digit === idArray[0])) {
+      return true
+    }
+    const sizes = possibleRepeatChunkSizes(id)
+    for (const size of sizes) {
+      if (repeatsForChunkSize(id, size)) {
+        return true
+      }
+    }
+    return false
+  }
+
   function isInvalidID(id: number): boolean {
     const idString = id.toString()
     if (idString.length % 2 !== 0) return false
@@ -38,7 +88,7 @@ export function getResult(input: string) {
     const { start, end } = parsedInput
     const invalidIDs: number[] = []
     for (let i = start; i <= end; i++) {
-      if (isInvalidID(i)) {
+      if (isPartTwo ? isInvalidIDPartTwo(i) : isInvalidID(i)) {
         sumOfInvalidIDs += i
         invalidIDs.push(i)
       }

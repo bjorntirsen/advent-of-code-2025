@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getResultDayOnePartOne } from '../day-2/day-two-utils'
+import { getResultDayOnePartOne } from './day-one-utils-part-one'
 import { inputPartOne } from './input-part-one'
 import { inputExample } from './input-example'
 import { getResultDayOnePartTwo } from './day-one-utils-part-two'

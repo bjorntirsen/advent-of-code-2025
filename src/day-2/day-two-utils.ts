@@ -60,6 +60,7 @@ export function getResult(input: string, isPartTwo = false) {
   }
 
   function isInvalidIDPartTwo(id: number) {
+    if (id < 10) return false
     const idArray = numberToDigitsArray(id)
     // If all digits are the same, it's invalid
     if (idArray.every((digit) => digit === idArray[0])) {

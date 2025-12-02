@@ -1,5 +1,5 @@
-import DayOne from "./day-1/day-one";
-import DayTwo from "./day-2/day-two";
+import DayOne from './day-1/day-one'
+import DayTwo from './day-2/day-two'
 
 function App() {
   return (
@@ -8,7 +8,7 @@ function App() {
       <DayTwo />
       <DayOne />
     </main>
-  );
+  )
 }
 
-export default App;
+export default App

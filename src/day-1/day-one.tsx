@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getResultDayOnePartOne } from "./day-one-utils";
+import { getResultDayOnePartOne } from "../day-2/day-two-utils";
 import { inputPartOne } from "./input-part-one";
 import { inputExample } from "./input-example";
 import { getResultDayOnePartTwo } from "./day-one-utils-part-two";
@@ -9,6 +9,7 @@ export default function DayOne() {
   const [result, setResult] = useState("");
   return (
     <section>
+      <h2>Day One</h2>
       <div style={{ display: "flex", gap: "1rem" }}>
         <button onClick={() => setResult("")}>Reset</button>
         <button

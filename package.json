@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --watch=false",
+    "test:watch": "vitest",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -26,6 +31,7 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^4.0.15"
   }
 }

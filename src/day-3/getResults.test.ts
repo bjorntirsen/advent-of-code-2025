@@ -12,4 +12,16 @@ describe('Day Three', () => {
       expect(getResult(input)).toContain('joltage of all banks is 17100.')
     })
   })
+  describe('Part Two', () => {
+    it('example', () => {
+      expect(getResult(exampleInput, true)).toContain(
+        'joltage of all banks is 3121910778619.',
+      )
+    })
+    it('input', () => {
+      expect(getResult(input, true)).toContain(
+        'joltage of all banks is 170418192256861.',
+      )
+    })
+  })
 })

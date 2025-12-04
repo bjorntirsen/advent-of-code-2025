@@ -44,3 +44,41 @@ jobs:
           node-version-file: '.nvmrc'
       - run: npm install
       - run: npm test
+
+  deploy:
+    needs: [typecheck, lint, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - run: npm install
+      - run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-pages:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

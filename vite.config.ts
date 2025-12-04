@@ -10,4 +10,5 @@ export default defineConfig({
       },
     }),
   ],
+  base: '/advent-of-code-2025/',
 })

@@ -1,4 +1,4 @@
-type GridPositionState = '.' | '@' | 'x'
+type GridPositionState = '.' | '@' | 'x' | 'O'
 
 function createGrid(input: string): GridPositionState[][] {
   const rows = input.split('\n')
@@ -70,13 +70,53 @@ function stringifyCheckedGrid(grid: GridPositionState[][]): string {
   return grid.map((row) => row.join('')).join('\n')
 }
 
+function checkGridRecursively(
+  grid: GridPositionState[][],
+  totalRemoved: number,
+  typedOutResult: string,
+): string {
+  let rollsToBeRemovedThisIteration = 0
+  const checkedGrid: GridPositionState[][] = grid.map((row, rowIndex) =>
+    row.map((cell, colIndex) => {
+      if (cell === 'O') {
+        return 'x'
+      } // Previously marked as accessible
+      if (cell === '@') {
+        const adjacentPositions = getAdjacentPositions(grid, rowIndex, colIndex)
+        if (fewerThanFourRollsOfPaperAdjacent(adjacentPositions)) {
+          rollsToBeRemovedThisIteration++
+          return 'O' // Mark as accessible
+        }
+      }
+      return cell
+    }),
+  )
+  if (rollsToBeRemovedThisIteration === 0)
+    return `${typedOutResult}\nA total of ${totalRemoved} rolls of paper can be removed.`
+  const newTypedOutResult =
+    typedOutResult +
+    stringifyCheckedGrid(checkedGrid) +
+    '\n\n' +
+    `Remove ${rollsToBeRemovedThisIteration} rolls of paper:\n`
+  return checkGridRecursively(
+    checkedGrid,
+    totalRemoved + rollsToBeRemovedThisIteration,
+    newTypedOutResult,
+  )
+}
+
 export function getResult(input: string, isPartTwo = false) {
   console.log('isPartTwo: ', isPartTwo)
 
   const grid = createGrid(input)
-  const { checkedGrid, accessibleCount } =
-    checkGridAndCoundAmountOfAccessible(grid)
-  const stringifiedCheckedGrid = stringifyCheckedGrid(checkedGrid)
+  if (!isPartTwo) {
+    const { checkedGrid, accessibleCount } =
+      checkGridAndCoundAmountOfAccessible(grid)
+    const stringifiedCheckedGrid = stringifyCheckedGrid(checkedGrid)
 
-  return `In this example, there are ${accessibleCount} rolls of paper that can be accessed by a forklift (marked with x):\n\n${stringifiedCheckedGrid}`
+    return `In this example, there are ${accessibleCount} rolls of paper that can be accessed by a forklift (marked with x):\n\n${stringifiedCheckedGrid}`
+  } else {
+    let typesedOutResult = `Initial state:\n`
+    return (typesedOutResult += checkGridRecursively(grid, 0, typesedOutResult))
+  }
 }

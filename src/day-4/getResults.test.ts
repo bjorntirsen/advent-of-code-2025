@@ -16,15 +16,15 @@ describe('Day Four', () => {
       )
     })
   })
-  describe.skip('Part Two', () => {
+  describe('Part Two', () => {
     it('example', () => {
       expect(getResult(exampleInput, true)).toContain(
-        'joltage of all banks is 3121910778619.',
+        'A total of 43 rolls of paper can be removed.',
       )
     })
     it('input', () => {
       expect(getResult(input, true)).toContain(
-        'joltage of all banks is 170418192256861.',
+        'A total of 8910 rolls of paper can be removed.',
       )
     })
   })

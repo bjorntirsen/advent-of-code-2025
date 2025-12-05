@@ -16,25 +16,33 @@ export const exampleInput = `3-5
 
 export default function DayFive() {
   const [result, setResult] = useState('')
+  const [resultWithLineBreaks, setResultWithLineBreaks] = useState('')
   return (
     <section>
       <h2>Day Five</h2>
       <div style={{ display: 'flex', gap: '1rem' }}>
-        <button onClick={() => setResult('')}>Reset</button>
+        <button onClick={() => (setResult(''), setResultWithLineBreaks(''))}>
+          Reset
+        </button>
         <button onClick={() => setResult(getResult(exampleInput))}>
           Run Example
         </button>
         <button onClick={() => setResult(getResult(input))}>
           Run Input Part One
         </button>
-        {/* <button onClick={() => setResult(getResult(exampleInput, true))}>
+        <button
+          onClick={() => setResultWithLineBreaks(getResult(exampleInput, true))}
+        >
           Run Example Part Two
         </button>
-        <button onClick={() => setResult(getResult(input, true))}>
+        <button onClick={() => setResultWithLineBreaks(getResult(input, true))}>
           Run Input Part Two
-        </button> */}
+        </button>
       </div>
-      <pre>{result}</pre>
+      {resultWithLineBreaks && (
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{resultWithLineBreaks}</pre>
+      )}
+      {result && <pre>{result}</pre>}
     </section>
   )
 }

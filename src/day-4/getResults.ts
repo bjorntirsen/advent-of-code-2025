@@ -106,8 +106,6 @@ function checkGridRecursively(
 }
 
 export function getResult(input: string, isPartTwo = false) {
-  console.log('isPartTwo: ', isPartTwo)
-
   const grid = createGrid(input)
   if (!isPartTwo) {
     const { checkedGrid, accessibleCount } =

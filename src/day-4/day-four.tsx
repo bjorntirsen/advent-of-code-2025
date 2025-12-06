@@ -18,7 +18,7 @@ export default function DayFour() {
   return (
     <section>
       <h2>Day Four</h2>
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="section-body">
         <button onClick={() => setResult('')}>Reset</button>
         <button onClick={() => setResult(getResult(exampleInput))}>
           Run Example

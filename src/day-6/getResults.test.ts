@@ -3,29 +3,13 @@ import { getResult } from './getResults'
 import { exampleInput } from './day-six'
 import input from './input.txt?raw'
 
-describe('Day Five', () => {
+describe('Day Six', () => {
   describe('Part One', () => {
     it('example', () => {
-      expect(getResult(exampleInput)).toContain(
-        '3 of the available ingredient IDs are fresh',
-      )
+      expect(getResult(exampleInput)).toContain('4277556')
     })
     it('input', () => {
-      expect(getResult(input)).toContain(
-        '733 of the available ingredient IDs are fresh',
-      )
-    })
-  })
-  describe('Part Two', () => {
-    it('example', () => {
-      expect(getResult(exampleInput, true)).toContain(
-        'the fresh ingredient ID ranges consider a total of 14 ingredient IDs to be fresh',
-      )
-    })
-    it('input', () => {
-      expect(getResult(input, true)).toContain(
-        'the fresh ingredient ID ranges consider a total of 345821388687084 ingredient IDs to be fresh',
-      )
+      expect(getResult(input)).toContain('6209956042374')
     })
   })
 })

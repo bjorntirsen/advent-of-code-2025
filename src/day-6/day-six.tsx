@@ -14,12 +14,12 @@ export const exampleInput = `3-5
 17
 32`
 
-export default function DayFive() {
+export default function DaySix() {
   const [result, setResult] = useState('')
   const [resultWithLineBreaks, setResultWithLineBreaks] = useState('')
   return (
     <section>
-      <h2>Day Five</h2>
+      <h2>Day Six</h2>
       <div className="section-body">
         <button onClick={() => (setResult(''), setResultWithLineBreaks(''))}>
           Reset

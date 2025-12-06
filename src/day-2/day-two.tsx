@@ -9,7 +9,7 @@ export default function DayTwo() {
   return (
     <section>
       <h2>Day Two</h2>
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="section-body">
         <button onClick={() => setResult('')}>Reset</button>
         <button onClick={() => setResult(getResult(exampleInput))}>
           Run Example

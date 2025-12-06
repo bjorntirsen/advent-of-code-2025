@@ -20,7 +20,7 @@ export default function DayFive() {
   return (
     <section>
       <h2>Day Five</h2>
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="section-body">
         <button onClick={() => (setResult(''), setResultWithLineBreaks(''))}>
           Reset
         </button>

@@ -2,38 +2,34 @@ import { useState } from 'react'
 import { getResult } from './getResults'
 import input from './input.txt?raw'
 
-export const exampleInput = `..@@.@@@@.
-@@@.@.@.@@
-@@@@@.@.@@
-@.@@@@..@.
-@@.@@@@.@@
-.@@@@@@@.@
-.@.@.@.@@@
-@.@@@.@@@@
-.@@@@@@@@.
-@.@.@@@.@.`
+export const exampleInput = `123 328  51 64 
+ 45 64  387 23 
+  6 98  215 314
+*   +   *   +  `
 
-export default function DayFour() {
+export default function DaySix() {
   const [result, setResult] = useState('')
   return (
     <section>
-      <h2>Day Four</h2>
+      <h2>Day 6: Trash Compactor</h2>
       <div className="section-body">
-        <button onClick={() => setResult('')}>Reset</button>
+        <button onClick={() => (setResult(''), setResult(''))}>Reset</button>
         <button onClick={() => setResult(getResult(exampleInput))}>
           Run Example
         </button>
         <button onClick={() => setResult(getResult(input))}>
           Run Input Part One
         </button>
-        <button onClick={() => setResult(getResult(exampleInput, true))}>
+        {/* <button
+          onClick={() => setResult(getResult(exampleInput, true))}
+        >
           Run Example Part Two
         </button>
         <button onClick={() => setResult(getResult(input, true))}>
           Run Input Part Two
-        </button>
+        </button> */}
       </div>
-      <pre>{result}</pre>
+      {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
     </section>
   )
 }

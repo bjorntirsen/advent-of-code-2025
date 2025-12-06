@@ -10,7 +10,7 @@ export default function DayOne() {
   return (
     <section>
       <h2>Day One</h2>
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="section-body">
         <button onClick={() => setResult('')}>Reset</button>
         <button
           onClick={() => setResult(getResultDayOnePartTwo(debugInput, 0))}

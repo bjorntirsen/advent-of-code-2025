@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import { getResult } from './getResults'
+import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
-
-export const exampleInput = `123 328  51 64 
- 45 64  387 23 
-  6 98  215 314
-*   +   *   +  `
 
 export default function DaySix() {
   const [result, setResult] = useState('')
@@ -20,14 +16,12 @@ export default function DaySix() {
         <button onClick={() => setResult(getResult(input))}>
           Run Input Part One
         </button>
-        {/* <button
-          onClick={() => setResult(getResult(exampleInput, true))}
-        >
+        <button onClick={() => setResult(getResult(exampleInput, true))}>
           Run Example Part Two
         </button>
         <button onClick={() => setResult(getResult(input, true))}>
           Run Input Part Two
-        </button> */}
+        </button>
       </div>
       {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
     </section>

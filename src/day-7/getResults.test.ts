@@ -3,13 +3,13 @@ import { getResult } from './getResults'
 import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
 
-describe('Day Six', () => {
+describe('Day Seven', () => {
   describe('Part One', () => {
     it('example', () => {
-      expect(getResult(exampleInput)).toContain('0')
+      expect(getResult(exampleInput)).toContain('total of 21 times')
     })
     it('input', () => {
-      expect(getResult(input)).toContain('0')
+      expect(getResult(input)).toContain('total of 1587 times')
     })
   })
 })

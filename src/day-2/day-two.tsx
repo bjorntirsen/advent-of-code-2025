@@ -8,7 +8,7 @@ export default function DayTwo() {
   const [result, setResult] = useState('')
   return (
     <section>
-      <h2>Day Two</h2>
+      <h2>Day 2: Gift Shop</h2>
       <div className="section-body">
         <button onClick={() => setResult('')}>Reset</button>
         <button onClick={() => setResult(getResult(exampleInput))}>

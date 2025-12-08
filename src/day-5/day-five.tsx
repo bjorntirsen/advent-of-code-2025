@@ -19,7 +19,7 @@ export default function DayFive() {
   const [resultWithLineBreaks, setResultWithLineBreaks] = useState('')
   return (
     <section>
-      <h2>Day Five</h2>
+      <h2>Day 5: Cafeteria</h2>
       <div className="section-body">
         <button onClick={() => (setResult(''), setResultWithLineBreaks(''))}>
           Reset

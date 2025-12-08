@@ -16,12 +16,12 @@ export default function DaySeven() {
         <button onClick={() => setResult(getResult(input))}>
           Run Input Part One
         </button>
-        {/* <button onClick={() => setResult(getResult(exampleInput, true))}>
+        <button onClick={() => setResult(getResult(exampleInput, true))}>
           Run Example Part Two
         </button>
         <button onClick={() => setResult(getResult(input, true))}>
           Run Input Part Two
-        </button> */}
+        </button>
       </div>
       {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
     </section>

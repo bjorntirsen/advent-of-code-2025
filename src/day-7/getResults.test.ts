@@ -12,4 +12,14 @@ describe('Day Seven', () => {
       expect(getResult(input)).toContain('total of 1587 times')
     })
   })
+  describe('Part Two', () => {
+    it('example', () => {
+      expect(getResult(exampleInput, true)).toContain('a total of 40 timelines')
+    })
+    it('input', () => {
+      expect(getResult(input, true)).toContain(
+        'a total of 5748679033029 timelines',
+      )
+    })
+  })
 })

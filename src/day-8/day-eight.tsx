@@ -10,10 +10,10 @@ export default function DayEight() {
       <h2>Day 8: Playground</h2>
       <div className="section-body">
         <button onClick={() => (setResult(''), setResult(''))}>Reset</button>
-        <button onClick={() => setResult(getResult(exampleInput))}>
+        <button onClick={() => setResult(getResult(exampleInput, 10))}>
           Run Example
         </button>
-        <button onClick={() => setResult(getResult(input))}>
+        <button onClick={() => setResult(getResult(input, 1000))}>
           Run Input Part One
         </button>
         {/* <button onClick={() => setResult(getResult(exampleInput, true))}>

@@ -1,103 +1,141 @@
-function createGrid(input: string) {
-  // Parse the input into a 2D array of strings and preseve spaces in the grid
-  return input.split('\n').map((line) => line.split(''))
+type Vector3D = [number, number, number]
+
+function parseInput(input: string): Vector3D[] {
+  const parsed = input
+    .split('\n')
+    .map((line) => line.split(',').map(Number) as Vector3D)
+
+  return parsed
 }
 
-function getIndexesOfTychonBeams(row: string[]) {
-  const indexOrMinusOne = row.map((item, index) =>
-    item === 'S' || item === '|' ? index : -1,
+function distance3D(a: Vector3D, b: Vector3D): number {
+  return Math.sqrt(
+    Math.pow(b[0] - a[0], 2) +
+      Math.pow(b[1] - a[1], 2) +
+      Math.pow(b[2] - a[2], 2),
   )
-  return indexOrMinusOne.filter((index) => index !== -1)
 }
 
-function renderNextRow(currentRow: string[], nextRow: string[] | undefined) {
-  if (!nextRow) return 0
-  const indexesOfTychonBeams = getIndexesOfTychonBeams(currentRow)
-  let numberOfSplitsThisTurn = 0
-  indexesOfTychonBeams.forEach((index) => {
-    if (nextRow[index] === '^') {
-      nextRow[index - 1] = '|'
-      nextRow[index + 1] = '|'
-      numberOfSplitsThisTurn++
+interface DistanceEntry {
+  from: Vector3D
+  to: Vector3D
+  distance: number
+}
+
+function getAllUniqueDistances(vectors: Vector3D[]): DistanceEntry[] {
+  const distances: DistanceEntry[] = []
+
+  for (let i = 0; i < vectors.length; i++) {
+    for (let j = i + 1; j < vectors.length; j++) {
+      const d = distance3D(vectors[i], vectors[j])
+      distances.push({ from: vectors[i], to: vectors[j], distance: d })
+    }
+  }
+
+  return distances
+}
+
+function isDistanceAlreadyConnected(
+  circuits: Vector3D[][],
+  entry: DistanceEntry,
+): 'nothing happens' | 'connected' {
+  let fromIndex: number | null = null
+  let toIndex: number | null = null
+
+  for (let i = 0; i < circuits.length; i++) {
+    const circuit = circuits[i]
+
+    if (circuit.some((v) => v.join(',') === entry.from.join(','))) {
+      fromIndex = i
+    }
+
+    if (circuit.some((v) => v.join(',') === entry.to.join(','))) {
+      toIndex = i
+    }
+  }
+
+  // Same circuit => do nothing
+  if (fromIndex !== null && fromIndex === toIndex) {
+    return 'nothing happens'
+  }
+
+  // Both found in different circuits => merge
+  if (fromIndex !== null && toIndex !== null && fromIndex !== toIndex) {
+    const circuitA = circuits[fromIndex]
+    const circuitB = circuits[toIndex]
+
+    const merged = [...circuitA, ...circuitB]
+
+    // Remove both safely
+    if (fromIndex > toIndex) {
+      circuits.splice(fromIndex, 1)
+      circuits.splice(toIndex, 1)
     } else {
-      nextRow[index] = '|'
-    }
-  })
-  return numberOfSplitsThisTurn
-}
-
-function countTimelines(grid: string[][]): number {
-  const widthOfRow = grid[0].length
-
-  // Array to hold counts of beams at each column
-  let counts = Array(widthOfRow).fill(0)
-
-  // Initial beams
-  for (const column of getIndexesOfTychonBeams(grid[0])) {
-    counts[column] = 1
-  }
-
-  for (let row = 0; row < grid.length - 1; row++) {
-    const nextRow = grid[row + 1]
-    const nextCounts = Array(widthOfRow).fill(0)
-
-    for (let column = 0; column < widthOfRow; column++) {
-      const beamCount = counts[column]
-      if (beamCount === 0) continue
-
-      if (nextRow[column] === '^') {
-        // Beam is split
-        if (column - 1 >= 0) nextCounts[column - 1] += beamCount
-        if (column + 1 < widthOfRow) nextCounts[column + 1] += beamCount
-      } else {
-        // Beam continues straight
-        nextCounts[column] += beamCount
-      }
+      circuits.splice(toIndex, 1)
+      circuits.splice(fromIndex, 1)
     }
 
-    counts = nextCounts
+    circuits.push(merged)
+
+    return 'connected'
   }
 
-  return counts.reduce((sum, v) => sum + v, 0)
+  // Only from exists
+  if (fromIndex !== null) {
+    circuits[fromIndex].push(entry.to)
+    return 'connected'
+  }
+
+  // Only to exists
+  if (toIndex !== null) {
+    circuits[toIndex].push(entry.from)
+    return 'connected'
+  }
+
+  return 'nothing happens'
 }
 
-type Grid = string[][]
+function connectJunctionBoxes(
+  sortedDistances: DistanceEntry[],
+  listOfVectors: Vector3D[],
+  numberOfConnections: number,
+) {
+  const circuits: Vector3D[][] = listOfVectors.map((v) => [v])
 
-function stringifyGrid(grid: Grid) {
-  let string = ''
-  grid.forEach((row) => {
-    string += row.join('')
-    string += '\n'
+  const amountsOfConnectionsToMake = sortedDistances.slice(
+    0,
+    numberOfConnections,
+  )
+
+  for (const entry of amountsOfConnectionsToMake) {
+    isDistanceAlreadyConnected(circuits, entry)
+  }
+
+  return circuits
+}
+
+export function getResult(input: string, numberOfConnections: number) {
+  const listOfVectors = parseInput(input)
+  const distances = getAllUniqueDistances(listOfVectors)
+  const sortedDistances = distances.sort((a, b) => a.distance - b.distance)
+
+  const circuits = connectJunctionBoxes(
+    sortedDistances,
+    listOfVectors,
+    numberOfConnections,
+  )
+
+  const sortedCircuits = circuits.sort((a, b) => b.length - a.length)
+  const topThree = sortedCircuits.slice(0, 3)
+
+  let typedOutRestult = ''
+  const numbersToMultiply: number[] = []
+  topThree.forEach((circuit, index) => {
+    const length = circuit.length
+    typedOutRestult += `- ${index + 1}: length: ${length} \n content${circuit.map((entry) => entry.join('+'))}\n`
+    numbersToMultiply.push(Number(length))
   })
-  return string
-}
+  const result = numbersToMultiply.reduce((acc, n) => acc * n, 1)
 
-export function getResult(input: string, isPartTwo = false) {
-  const grid = createGrid(input)
-  let description = ''
-  if (!isPartTwo) {
-    let numberOfSplits = 0
-    grid.reduce(
-      (state) => {
-        const { grid, currentRowIndex } = state
-        description += `${stringifyGrid(state.grid)}\n\n`
-        // if ()
-        numberOfSplits += renderNextRow(
-          grid[currentRowIndex],
-          grid[currentRowIndex + 1] || undefined,
-        )
-        return { grid, currentRowIndex: currentRowIndex + 1, numberOfSplits }
-      },
-      {
-        grid,
-        currentRowIndex: 0,
-        numberOfSplits: 0,
-      },
-    )
-    description += `\n\nHere, the tachyon beam is split a total of ${numberOfSplits} times.`
-    return description
-  }
-  const count = countTimelines(grid)
-  description += `\n\nHere, the tachyon beam creates a total of ${count} timelines.`
-  return description
+  return (typedOutRestult += `\n The thee largest multiplied becomes: ${result}`)
 }

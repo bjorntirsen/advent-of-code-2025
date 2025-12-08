@@ -5,11 +5,13 @@ import DayFour from './day-4/day-four'
 import DayFive from './day-5/day-five'
 import DaySix from './day-6/day-six'
 import DaySeven from './day-7/day-seven'
+import DayEight from './day-8/day-eight'
 
 function App() {
   return (
     <main style={{ padding: '1rem' }}>
       <h1>Advent of Code 2025</h1>
+      <DayEight />
       <DaySeven />
       <DaySix />
       <DayFive />

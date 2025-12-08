@@ -9,7 +9,7 @@ export default function DayOne() {
   const [result, setResult] = useState('')
   return (
     <section>
-      <h2>Day One</h2>
+      <h2>Day 1: Secret Entrance</h2>
       <div className="section-body">
         <button onClick={() => setResult('')}>Reset</button>
         <button

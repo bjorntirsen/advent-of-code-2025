@@ -17,7 +17,7 @@ export default function DayFour() {
   const [result, setResult] = useState('')
   return (
     <section>
-      <h2>Day Four</h2>
+      <h2>Day 4: Printing Department</h2>
       <div className="section-body">
         <button onClick={() => setResult('')}>Reset</button>
         <button onClick={() => setResult(getResult(exampleInput))}>

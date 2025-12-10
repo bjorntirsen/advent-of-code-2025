@@ -12,4 +12,12 @@ describe('Day Eight', () => {
       expect(getResult(input, 1000)).toContain('becomes: 122430')
     })
   })
+  describe('Part Two', () => {
+    it('example', () => {
+      expect(getResult(exampleInput)).toContain('produces 25272')
+    })
+    it('input', () => {
+      expect(getResult(input)).toContain('produces 8135565324')
+    })
+  })
 })

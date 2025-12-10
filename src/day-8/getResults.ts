@@ -114,28 +114,81 @@ function connectJunctionBoxes(
   return circuits
 }
 
-export function getResult(input: string, numberOfConnections: number) {
+interface VectorEntry {
+  id: string
+  connected: boolean
+}
+
+function checkVector(vector: Vector3D, vectorChecklist: VectorEntry[]) {
+  const vectorToCheck = vectorChecklist.find(
+    (vectorEntry) => vectorEntry.id === vector.join(','),
+  )
+  if (!vectorToCheck) throw new Error("Couldn't find a vector to check")
+  const index = vectorChecklist.indexOf(vectorToCheck)
+  vectorChecklist[index].connected = true
+}
+
+function connectJunctionBoxesUntilTheyFormOneCircuit(
+  sortedDistances: DistanceEntry[],
+  listOfVectors: Vector3D[],
+  vectorChecklist: VectorEntry[],
+) {
+  const circuits: Vector3D[][] = listOfVectors.map((v) => [v])
+  for (let index = 0; index < sortedDistances.length; index++) {
+    const element = sortedDistances[index]
+
+    isDistanceAlreadyConnected(circuits, element)
+    checkVector(element.from, vectorChecklist)
+    checkVector(element.to, vectorChecklist)
+    if (vectorChecklist.every((item) => item.connected === true)) {
+      return element
+    }
+  }
+
+  throw new Error('failure!')
+}
+
+function createVectorChecklist(listOfVectors: Vector3D[]) {
+  const stringifiedVectors = listOfVectors.map((vector) => vector.join(','))
+  return stringifiedVectors.map((string) => ({ id: string, connected: false }))
+}
+
+export function getResult(
+  input: string,
+  numberOfConnections: number | undefined = undefined,
+) {
   const listOfVectors = parseInput(input)
+  const vectorChecklist = createVectorChecklist(listOfVectors)
   const distances = getAllUniqueDistances(listOfVectors)
   const sortedDistances = distances.sort((a, b) => a.distance - b.distance)
 
-  const circuits = connectJunctionBoxes(
+  if (numberOfConnections) {
+    const circuits = connectJunctionBoxes(
+      sortedDistances,
+      listOfVectors,
+      numberOfConnections,
+    )
+
+    const sortedCircuits = circuits.sort((a, b) => b.length - a.length)
+    const topThree = sortedCircuits.slice(0, 3)
+
+    let typedOutRestult = ''
+    const numbersToMultiply: number[] = []
+    topThree.forEach((circuit, index) => {
+      const length = circuit.length
+      typedOutRestult += `- ${index + 1}: length: ${length} \n content${circuit.map((entry) => entry.join('+'))}\n`
+      numbersToMultiply.push(Number(length))
+    })
+    const result = numbersToMultiply.reduce((acc, n) => acc * n, 1)
+
+    return (typedOutRestult += `\n The thee largest multiplied becomes: ${result}`)
+  }
+  const circuits = connectJunctionBoxesUntilTheyFormOneCircuit(
     sortedDistances,
     listOfVectors,
-    numberOfConnections,
+    vectorChecklist,
   )
-
-  const sortedCircuits = circuits.sort((a, b) => b.length - a.length)
-  const topThree = sortedCircuits.slice(0, 3)
-
-  let typedOutRestult = ''
-  const numbersToMultiply: number[] = []
-  topThree.forEach((circuit, index) => {
-    const length = circuit.length
-    typedOutRestult += `- ${index + 1}: length: ${length} \n content${circuit.map((entry) => entry.join('+'))}\n`
-    numbersToMultiply.push(Number(length))
-  })
-  const result = numbersToMultiply.reduce((acc, n) => acc * n, 1)
-
-  return (typedOutRestult += `\n The thee largest multiplied becomes: ${result}`)
+  const first = circuits.from[0]
+  const second = circuits.to[0]
+  return `Multiplying the X coordinates of the last two junction boxes (${first} and ${second}) produces ${first * second}.`
 }

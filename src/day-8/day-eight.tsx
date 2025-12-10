@@ -16,12 +16,12 @@ export default function DayEight() {
         <button onClick={() => setResult(getResult(input, 1000))}>
           Run Input Part One
         </button>
-        {/* <button onClick={() => setResult(getResult(exampleInput, true))}>
+        <button onClick={() => setResult(getResult(exampleInput))}>
           Run Example Part Two
         </button>
-        <button onClick={() => setResult(getResult(input, true))}>
+        <button onClick={() => setResult(getResult(input))}>
           Run Input Part Two
-        </button> */}
+        </button>
       </div>
       {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
     </section>

@@ -4,12 +4,12 @@ import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
 
 describe('Day Eight', () => {
-  describe.skip('Part One', () => {
+  describe('Part One', () => {
     it('example', () => {
-      expect(getResult(exampleInput)).toContain('becomes: 40')
+      expect(getResult(exampleInput)).toContain('area 50')
     })
     it('input', () => {
-      expect(getResult(input)).toContain('becomes: 122430')
+      expect(getResult(input)).toContain('area 4758598740')
     })
   })
 })

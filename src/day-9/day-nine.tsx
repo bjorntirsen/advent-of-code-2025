@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getResult } from './getResults'
+import { getResult, getResultForPartTwo } from './getResults'
 import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
 
@@ -13,15 +13,13 @@ export default function DayNine() {
         <button onClick={() => setResult(getResult(exampleInput))}>
           Run Example
         </button>
-        <button onClick={() => setResult(getResult(input))}>
-          Run Input Part One
-        </button>
-        {/* <button onClick={() => setResult(getResult(exampleInput))}>
+        <button onClick={() => setResult(getResult(input))}>Run Input</button>
+        <button onClick={() => setResult(getResultForPartTwo(exampleInput))}>
           Run Example Part Two
         </button>
-        <button onClick={() => setResult(getResult(input))}>
+        <button onClick={() => setResult(getResultForPartTwo(input))}>
           Run Input Part Two
-        </button> */}
+        </button>
       </div>
       {result && <pre style={{ whiteSpace: 'pre-wrap' }}>{result}</pre>}
     </section>

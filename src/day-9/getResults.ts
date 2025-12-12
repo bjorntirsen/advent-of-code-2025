@@ -1,10 +1,5 @@
 type Point = [number, number]
 
-interface PointWithState {
-  point: Point
-  state: 'red' | 'green'
-}
-
 function parseInput(input: string) {
   const parsed = input
     .split('\n')
@@ -45,29 +40,18 @@ function getAllUniqueAreas(points: Point[]): AreaEntry[] {
   return results.sort((x, y) => y.area - x.area)
 }
 
-function getSizeOfCanvas(coordinates: number[][]) {
-  let maxX = 0
-  let maxY = 0
-  coordinates.forEach((location) => {
-    if (location[0] > maxX) maxX = location[0]
-    if (location[1] > maxY) maxY = location[1]
-  })
-  return [maxX, maxY]
+export function getResult(input: string) {
+  const coordinates = parseInput(input)
+  let resultText = 'Results for this input:\n'
+  const areas = getAllUniqueAreas(coordinates)
+  resultText += `\n\nThe largest rectangle you can make in this example has area ${areas[0].area}. One way to do this is between ${areas[0].from.join(',')} and ${areas[0].to.join(',')}.`
+  return resultText
 }
 
-function drawGrid(coordiantes: PointWithState[], canvasSize: number[]) {
-  const paddingX = 2
-  const paddingY = 1
-  const height = canvasSize[1] + paddingY * 2
-  const width = canvasSize[0] + paddingX * 2
-  const grid = Array.from({ length: height }, () => Array(width).fill('.'))
-  coordiantes.forEach((location) => {
-    const { point, state } = location
-    const x = point[0]
-    const y = point[1]
-    grid[y][x] = state === 'red' ? '#' : 'X'
-  })
-  return grid.map((row) => row.join('')).join('\n')
+// ---- PART TWO ----
+interface PointWithState {
+  point: Point
+  state: 'red' | 'green'
 }
 
 function addGreenTiles(
@@ -121,12 +105,52 @@ function connectRedTilesWithGreen(pointsWithState: PointWithState[]) {
   }
 }
 
-export function getResult(input: string) {
-  const coordinates = parseInput(input)
-  let resultText = 'Results for this input:\n'
-  const areas = getAllUniqueAreas(coordinates)
-  resultText += `\n\nThe largest rectangle you can make in this example has area ${areas[0].area}. One way to do this is between ${areas[0].from.join(',')} and ${areas[0].to.join(',')}.`
-  return resultText
+function getSizeOfCanvas(coordinates: number[][]) {
+  let maxX = 0
+  let maxY = 0
+  coordinates.forEach((location) => {
+    if (location[0] > maxX) maxX = location[0]
+    if (location[1] > maxY) maxY = location[1]
+  })
+  return [maxX, maxY]
+}
+
+function drawGrid(coordiantes: PointWithState[], canvasSize: number[]) {
+  const paddingX = 2
+  const paddingY = 1
+  const height = canvasSize[1] + paddingY * 2
+  const width = canvasSize[0] + paddingX * 2
+  const grid = Array.from({ length: height }, () => Array(width).fill('.'))
+  coordiantes.forEach((location) => {
+    const { point, state } = location
+    const x = point[0]
+    const y = point[1]
+    grid[y][x] = state === 'red' ? '#' : 'X'
+  })
+  return grid.map((row) => row.join('')).join('\n')
+}
+
+function fillShape(canvasSize: number[], pointsWithState: PointWithState[]) {
+  console.log('canvasSize: ', canvasSize)
+  pointsWithState.forEach(({ point, state }) => {
+    console.log('point: ', point)
+  })
+  for (let x = 0; x <= canvasSize[0]; x++) {
+    let inside = false
+    for (let y = 0; y <= canvasSize[1]; y++) {
+      const pointState = pointsWithState.find(
+        (p) => p.point[0] === x && p.point[1] === y,
+      )?.state
+      if (pointState === 'red') {
+        inside = !inside
+      } else if (inside) {
+        // If we're inside the shape, fill with green
+        if (!pointState) {
+          pointsWithState.push({ point: [x, y], state: 'green' })
+        }
+      }
+    }
+  }
 }
 
 export function getResultForPartTwo(input: string) {
@@ -137,7 +161,8 @@ export function getResultForPartTwo(input: string) {
   }))
   connectRedTilesWithGreen(pointsWithState)
   const canvasSize = getSizeOfCanvas(points)
+  fillShape(canvasSize, pointsWithState)
   let resultText = 'Results for this input:\n'
-  resultText = drawGrid(pointsWithState, canvasSize)
+  // resultText = drawGrid(pointsWithState, canvasSize)
   return resultText
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { getResult, getResultForPartTwo } from './getResults'
+import { getResult } from './getResults'
 import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
+import { getResultForPartTwo } from './getResultsPartTwo'
 
 export default function DayNine() {
   const [result, setResult] = useState('')

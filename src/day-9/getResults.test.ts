@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getResult } from './getResults'
 import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
+import { getResultForPartTwo } from './getResultsPartTwo'
 
 describe('Day Eight', () => {
   describe('Part One', () => {
@@ -10,6 +11,11 @@ describe('Day Eight', () => {
     })
     it('input', () => {
       expect(getResult(input)).toContain('area 4758598740')
+    })
+  })
+  describe('Part Two', () => {
+    it('exampleInput', () => {
+      expect(getResultForPartTwo(exampleInput)).toContain('has area 24.')
     })
   })
 })

@@ -1,233 +1,348 @@
 type Point = [number, number]
 
-function parseInput(input: string) {
-  const parsed = input
-    .split('\n')
-    .map((line) => line.split(',').map(Number) as Point)
-
-  return parsed
-}
-
-interface RectangleResult {
-  from: Point
-  to: Point
+interface Rectangle {
+  topLeft: Point
+  bottomRight: Point
   area: number
 }
 
-function rectangleIsInsideTyped(
-  outsideSum: Uint32Array,
-  wallSum: Uint32Array,
-  w: number,
-  a: Point,
-  b: Point,
-  xIndex: Map<number, number>,
-  yIndex: Map<number, number>,
-) {
-  const minX = Math.min(a[0], b[0])
-  const maxX = Math.max(a[0], b[0])
-  const minY = Math.min(a[1], b[1])
-  const maxY = Math.max(a[1], b[1])
-
-  const cx1 = xIndex.get(minX)!
-  const cx2 = xIndex.get(maxX)!
-  const cy1 = yIndex.get(minY)!
-  const cy2 = yIndex.get(maxY)!
-
-  // interior-only in compressed grid space
-  const ix1 = cx1 + 1
-  const ix2 = cx2 - 1
-  const iy1 = cy1 + 1
-  const iy2 = cy2 - 1
-
-  if (ix1 > ix2 || iy1 > iy2) return false
-
-  if (rectCount1D(outsideSum, w, ix1, iy1, ix2, iy2) !== 0) return false
-  if (rectCount1D(wallSum, w, ix1, iy1, ix2, iy2) !== 0) return false
-
-  return true
+interface CompressedGrid {
+  xCoordinates: number[]
+  yCoordinates: number[]
+  xIndexMap: Map<number, number>
+  yIndexMap: Map<number, number>
 }
 
-function findLargestValidRectangle(
-  points: Point[],
-  outsideSum: Uint32Array,
-  wallSum: Uint32Array,
-  w: number,
-  xIndex: Map<number, number>,
-  yIndex: Map<number, number>,
-): RectangleResult | null {
-  let best: RectangleResult | null = null
-  let bestArea = 0
-
-  const n = points.length
-
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      const a = points[i]
-      const b = points[j]
-
-      const width = Math.abs(a[0] - b[0]) + 1
-      const height = Math.abs(a[1] - b[1]) + 1
-      const area = width * height
-
-      if (area <= bestArea) continue
-
-      if (
-        rectangleIsInsideTyped(outsideSum, wallSum, w, a, b, xIndex, yIndex)
-      ) {
-        bestArea = area
-        best = { from: a, to: b, area }
-      }
-    }
-  }
-
-  return best
+// Using Uint8Array to save memory. 8x smaller than number[]
+interface Grid {
+  data: Uint8Array
+  width: number
+  height: number
 }
 
-function compressCoordinates(points: Point[]) {
-  const xs = new Set<number>()
-  const ys = new Set<number>()
+/**
+ * Parse input string into array of coordinate points.
+ * Expected format: "x,y\nx,y\nx,y"
+ */
+function parseInput(input: string): Point[] {
+  return input.split('\n').map((line) => line.split(',').map(Number) as Point)
+}
 
+/**
+ * Compress coordinates to reduce grid size.
+ * For each point, we also include adjacent coordinates (±1)
+ * to ensure we can properly detect edges and boundaries.
+ */
+function compressCoordinates(points: Point[]): CompressedGrid {
+  const xSet = new Set<number>()
+  const ySet = new Set<number>()
+
+  // Collect all x and y coordinates, plus their neighbors
   for (const [x, y] of points) {
-    xs.add(x)
-    xs.add(x - 1)
-    xs.add(x + 1)
+    xSet.add(x - 1)
+    xSet.add(x)
+    xSet.add(x + 1)
 
-    ys.add(y)
-    ys.add(y - 1)
-    ys.add(y + 1)
+    ySet.add(y - 1)
+    ySet.add(y)
+    ySet.add(y + 1)
   }
 
-  const xsArr = Array.from(xs).sort((a, b) => a - b)
-  const ysArr = Array.from(ys).sort((a, b) => a - b)
+  // Sort coordinates for consistent indexing
+  const xCoordinates = Array.from(xSet).sort((a, b) => a - b)
+  const yCoordinates = Array.from(ySet).sort((a, b) => a - b)
 
-  const xIndex = new Map<number, number>()
-  const yIndex = new Map<number, number>()
+  // Create maps from actual coordinate to grid index
+  const xIndexMap = new Map<number, number>()
+  const yIndexMap = new Map<number, number>()
 
-  xsArr.forEach((x, i) => xIndex.set(x, i))
-  ysArr.forEach((y, i) => yIndex.set(y, i))
+  xCoordinates.forEach((x, index) => xIndexMap.set(x, index))
+  yCoordinates.forEach((y, index) => yIndexMap.set(y, index))
 
-  return { xs: xsArr, ys: ysArr, xIndex, yIndex }
+  return { xCoordinates, yCoordinates, xIndexMap, yIndexMap }
 }
 
-function makeGrid(w: number, h: number) {
-  return new Uint8Array(w * h) // 0 empty, 1 wall
+/**
+ * Create an empty grid with given dimensions.
+ * Values: 0 = empty, 1 = occupied (wall)
+ */
+function createEmptyGrid(width: number, height: number): Grid {
+  return {
+    data: new Uint8Array(width * height),
+    width,
+    height,
+  }
 }
 
-function idx(x: number, y: number, w: number) {
-  return y * w + x
+/**
+ * Convert 2D coordinates to 1D array index.
+ */
+function getIndex(x: number, y: number, width: number): number {
+  return y * width + x
 }
 
-function drawBoundaryFromVertices(
-  wall: Uint8Array,
-  w: number,
-  points: Point[],
-  xIndex: Map<number, number>,
-  yIndex: Map<number, number>,
-) {
-  const n = points.length
+/**
+ * Draw the polygon boundary on the grid by connecting consecutive vertices.
+ */
+function drawPolygonBoundary(
+  grid: Grid,
+  vertices: Point[],
+  compressed: CompressedGrid,
+): void {
+  const { xIndexMap, yIndexMap } = compressed
+  const { data, width } = grid
 
-  for (let i = 0; i < n; i++) {
-    const [x1, y1] = points[i]
-    const [x2, y2] = points[(i + 1) % n]
+  for (let i = 0; i < vertices.length; i++) {
+    const [x1, y1] = vertices[i]
+    const [x2, y2] = vertices[(i + 1) % vertices.length] // Wrap to first vertex
 
-    const cx1 = xIndex.get(x1)!
-    const cy1 = yIndex.get(y1)!
-    const cx2 = xIndex.get(x2)!
-    const cy2 = yIndex.get(y2)!
+    // Convert to compressed grid coordinates
+    const compressedX1 = xIndexMap.get(x1)!
+    const compressedY1 = yIndexMap.get(y1)!
+    const compressedX2 = xIndexMap.get(x2)!
+    const compressedY2 = yIndexMap.get(y2)!
 
-    const dx = Math.sign(cx2 - cx1)
-    const dy = Math.sign(cy2 - cy1)
+    // Draw line from point 1 to point 2
+    const deltaX = Math.sign(compressedX2 - compressedX1)
+    const deltaY = Math.sign(compressedY2 - compressedY1)
 
-    let x = cx1
-    let y = cy1
-    wall[idx(x, y, w)] = 1
+    let currentX = compressedX1
+    let currentY = compressedY1
 
-    while (x !== cx2 || y !== cy2) {
-      x += dx
-      y += dy
-      wall[idx(x, y, w)] = 1
+    // Mark starting point
+    data[getIndex(currentX, currentY, width)] = 1
+
+    // Draw line step by step
+    while (currentX !== compressedX2 || currentY !== compressedY2) {
+      currentX += deltaX
+      currentY += deltaY
+      data[getIndex(currentX, currentY, width)] = 1
     }
   }
 }
 
-function floodOutsideTyped(wall: Uint8Array, w: number, h: number) {
-  const outside = new Uint8Array(w * h) // 0/1
-  const stack: number[] = [0] // start at (0,0) => index 0
+/**
+ * Flood fill algorithm to mark all cells outside the polygon.
+ * Starts from top-left corner (0,0) and spreads to all reachable cells.
+ */
+function markOutsideCells(wallGrid: Grid): Grid {
+  const { width, height, data: wallData } = wallGrid
+  const outsideGrid = createEmptyGrid(width, height)
+  const stack: number[] = [0] // Start at index 0 (top-left corner)
 
-  while (stack.length) {
-    const p = stack.pop()!
-    if (outside[p]) continue
-    if (wall[p]) continue
+  while (stack.length > 0) {
+    const currentIndex = stack.pop()!
 
-    outside[p] = 1
-    const x = p % w
-    const y = (p / w) | 0
+    // Skip if already marked or is a wall
+    if (outsideGrid.data[currentIndex] === 1) continue
+    if (wallData[currentIndex] === 1) continue
 
-    if (y > 0) stack.push(p - w)
-    if (y + 1 < h) stack.push(p + w)
-    if (x > 0) stack.push(p - 1)
-    if (x + 1 < w) stack.push(p + 1)
+    // Mark as outside
+    outsideGrid.data[currentIndex] = 1
+
+    // Calculate 2D coordinates
+    const x = currentIndex % width
+    const y = Math.floor(currentIndex / width)
+
+    // Add neighbors to stack (up, down, left, right)
+    if (y > 0) stack.push(currentIndex - width) // Up
+    if (y < height - 1) stack.push(currentIndex + width) // Down
+    if (x > 0) stack.push(currentIndex - 1) // Left
+    if (x < width - 1) stack.push(currentIndex + 1) // Right
   }
 
-  return outside
+  return outsideGrid
 }
 
-function buildPrefixSum(mask: Uint8Array, w: number, h: number) {
-  const sum = new Uint32Array(w * h)
+/**
+ * Build a 2D prefix sum array for fast rectangle queries.
+ * This allows O(1) counting of marked cells in any rectangle.
+ */
+function buildPrefixSumTable(grid: Grid): Uint32Array {
+  const { data, width, height } = grid
+  const prefixSum = new Uint32Array(width * height)
 
-  for (let y = 0; y < h; y++) {
-    let rowAcc = 0
-    for (let x = 0; x < w; x++) {
-      rowAcc += mask[idx(x, y, w)]
-      const above = y > 0 ? sum[idx(x, y - 1, w)] : 0
-      sum[idx(x, y, w)] = rowAcc + above
+  for (let y = 0; y < height; y++) {
+    let rowSum = 0
+
+    for (let x = 0; x < width; x++) {
+      rowSum += data[getIndex(x, y, width)]
+      const valueAbove = y > 0 ? prefixSum[getIndex(x, y - 1, width)] : 0
+      prefixSum[getIndex(x, y, width)] = rowSum + valueAbove
     }
   }
-  return sum
+
+  return prefixSum
 }
 
-function rectCount1D(
-  sum: Uint32Array,
-  w: number,
+/**
+ * Count marked cells in a rectangle using prefix sum table.
+ * Uses inclusion-exclusion principle: A - B - C + D
+ */
+function countCellsInRectangle(
+  prefixSum: Uint32Array,
+  width: number,
   x1: number,
   y1: number,
   x2: number,
   y2: number,
-) {
-  const A = sum[idx(x2, y2, w)]
-  const B = y1 > 0 ? sum[idx(x2, y1 - 1, w)] : 0
-  const C = x1 > 0 ? sum[idx(x1 - 1, y2, w)] : 0
-  const D = x1 > 0 && y1 > 0 ? sum[idx(x1 - 1, y1 - 1, w)] : 0
-  return A - B - C + D
+): number {
+  const bottomRight = prefixSum[getIndex(x2, y2, width)]
+  const topRight = y1 > 0 ? prefixSum[getIndex(x2, y1 - 1, width)] : 0
+  const bottomLeft = x1 > 0 ? prefixSum[getIndex(x1 - 1, y2, width)] : 0
+  const topLeft =
+    x1 > 0 && y1 > 0 ? prefixSum[getIndex(x1 - 1, y1 - 1, width)] : 0
+
+  return bottomRight - topRight - bottomLeft + topLeft
 }
 
-export function getResultForPartTwo(input: string) {
-  const points = parseInput(input)
-  const { xs, ys, xIndex, yIndex } = compressCoordinates(points) // ✅ red only
-  console.log('compressed grid size:', xs.length, ys.length)
+/**
+ * Check if a rectangle fits inside the polygon (no walls or outside cells).
+ * We check the interior only (excluding the rectangle's own edges).
+ */
+function isRectangleValid(
+  outsidePrefixSum: Uint32Array,
+  wallPrefixSum: Uint32Array,
+  gridWidth: number,
+  corner1: Point,
+  corner2: Point,
+  compressed: CompressedGrid,
+): boolean {
+  const { xIndexMap, yIndexMap } = compressed
 
-  const w = xs.length
-  const h = ys.length
+  // Get rectangle bounds in original coordinates
+  const minX = Math.min(corner1[0], corner2[0])
+  const maxX = Math.max(corner1[0], corner2[0])
+  const minY = Math.min(corner1[1], corner2[1])
+  const maxY = Math.max(corner1[1], corner2[1])
 
-  const wall = makeGrid(w, h)
-  drawBoundaryFromVertices(wall, w, points, xIndex, yIndex)
+  // Convert to compressed grid coordinates
+  const compressedMinX = xIndexMap.get(minX)!
+  const compressedMaxX = xIndexMap.get(maxX)!
+  const compressedMinY = yIndexMap.get(minY)!
+  const compressedMaxY = yIndexMap.get(maxY)!
 
-  const outside = floodOutsideTyped(wall, w, h)
+  // Get interior bounds (excluding edges)
+  const interiorMinX = compressedMinX + 1
+  const interiorMaxX = compressedMaxX - 1
+  const interiorMinY = compressedMinY + 1
+  const interiorMaxY = compressedMaxY - 1
 
-  const outsideSum = buildPrefixSum(outside, w, h)
-  const wallSum = buildPrefixSum(wall, w, h)
+  // If no interior exists, rectangle is invalid
+  if (interiorMinX > interiorMaxX || interiorMinY > interiorMaxY) {
+    return false
+  }
 
-  const rectangleResult = findLargestValidRectangle(
-    points,
-    outsideSum,
-    wallSum,
-    w,
-    xIndex,
-    yIndex,
+  // Check if interior contains any outside cells or walls
+  const outsideCount = countCellsInRectangle(
+    outsidePrefixSum,
+    gridWidth,
+    interiorMinX,
+    interiorMinY,
+    interiorMaxX,
+    interiorMaxY,
   )
 
-  if (!rectangleResult) throw new Error('Search failed!')
-  const { from, to, area } = rectangleResult
-  const resultText = `The largest rectangle you can make in this example using only red and green tiles has area ${area}. One way to do this is between ${from.join(',')} and ${to.join(',')}.`
-  return resultText
+  const wallCount = countCellsInRectangle(
+    wallPrefixSum,
+    gridWidth,
+    interiorMinX,
+    interiorMinY,
+    interiorMaxX,
+    interiorMaxY,
+  )
+
+  // Valid if no outside cells or walls in interior
+  return outsideCount === 0 && wallCount === 0
+}
+
+/**
+ * Find the largest rectangle that fits inside the polygon.
+ * Tests all pairs of vertices as potential opposite corners.
+ */
+function findLargestRectangle(
+  vertices: Point[],
+  outsidePrefixSum: Uint32Array,
+  wallPrefixSum: Uint32Array,
+  gridWidth: number,
+  compressed: CompressedGrid,
+): Rectangle | null {
+  let bestRectangle: Rectangle | null = null
+  let bestArea = 0
+
+  // Try all pairs of vertices as opposite corners
+  for (let i = 0; i < vertices.length; i++) {
+    for (let j = i + 1; j < vertices.length; j++) {
+      const corner1 = vertices[i]
+      const corner2 = vertices[j]
+
+      // Calculate rectangle dimensions and area
+      const width = Math.abs(corner1[0] - corner2[0]) + 1
+      const height = Math.abs(corner1[1] - corner2[1]) + 1
+      const area = width * height
+
+      // Skip if smaller than current best
+      if (area <= bestArea) continue
+
+      // Check if this rectangle is valid (fits inside polygon)
+      if (
+        isRectangleValid(
+          outsidePrefixSum,
+          wallPrefixSum,
+          gridWidth,
+          corner1,
+          corner2,
+          compressed,
+        )
+      ) {
+        bestArea = area
+        bestRectangle = {
+          topLeft: corner1,
+          bottomRight: corner2,
+          area,
+        }
+      }
+    }
+  }
+
+  return bestRectangle
+}
+
+// MAIN FUNCTION
+// Find the largest rectangle that fits inside a polygon.
+export function getResultForPartTwo(input: string): string {
+  // Parse the input vertices
+  const vertices = parseInput(input)
+
+  // Compress coordinates to reduce grid size
+  const compressed = compressCoordinates(vertices)
+
+  const gridWidth = compressed.xCoordinates.length
+  const gridHeight = compressed.yCoordinates.length
+
+  // Create grid and draw polygon boundary
+  const wallGrid = createEmptyGrid(gridWidth, gridHeight)
+  drawPolygonBoundary(wallGrid, vertices, compressed)
+
+  // Mark all cells outside the polygon
+  const outsideGrid = markOutsideCells(wallGrid)
+
+  // Build prefix sum tables for fast queries
+  const outsidePrefixSum = buildPrefixSumTable(outsideGrid)
+  const wallPrefixSum = buildPrefixSumTable(wallGrid)
+
+  // Find the largest valid rectangle
+  const result = findLargestRectangle(
+    vertices,
+    outsidePrefixSum,
+    wallPrefixSum,
+    gridWidth,
+    compressed,
+  )
+
+  if (!result) {
+    throw new Error('No valid rectangle found!')
+  }
+
+  return `The largest rectangle you can make in this example using only red and green tiles has area ${result.area}. One way to do this is between ${result.topLeft.join(',')} and ${result.bottomRight.join(',')}.`
 }

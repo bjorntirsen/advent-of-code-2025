@@ -5,6 +5,7 @@ import { inputExample } from './input-example'
 import { getResultDayOnePartTwo } from './day-one-utils-part-two'
 import { debugInput } from './debug-input'
 import { Modal } from '../ui/modal'
+import SafeDial from './safe-dial'
 
 export default function DayOne() {
   const [result, setResult] = useState('')
@@ -13,11 +14,9 @@ export default function DayOne() {
     <section>
       <h2>Day 1: Secret Entrance</h2>
       <div className="section-body">
-        <button onClick={() => setIsModalOpen(true)}>
-          Visualize Part One Example
-        </button>
+        <button onClick={() => setIsModalOpen(true)}>Show Visualization</button>
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-          This is the content of the modal
+          <SafeDial />
         </Modal>
         <button onClick={() => setResult('')}>Reset</button>
         <button

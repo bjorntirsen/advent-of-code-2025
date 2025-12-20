@@ -4,7 +4,7 @@ import exampleInput from './exampleInput.txt?raw'
 import input from './input.txt?raw'
 import { getResultForPartTwo } from './getResultsPartTwo'
 
-describe('Day Eight', () => {
+describe('Day Nine', () => {
   describe('Part One', () => {
     it('example', () => {
       expect(getResult(exampleInput)).toContain('area 50')

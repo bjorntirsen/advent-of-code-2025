@@ -17,5 +17,8 @@ describe('Day Eight', () => {
     it('exampleInput', () => {
       expect(getResultForPartTwo(exampleInput)).toContain('has area 24.')
     })
+    it('input', () => {
+      expect(getResultForPartTwo(input)).toContain('has area 1474699155.')
+    })
   })
 })

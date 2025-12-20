@@ -8,162 +8,21 @@ function parseInput(input: string) {
   return parsed
 }
 
-interface PointWithState {
-  point: Point
-  state: 'red' | 'green'
-}
-
-function addGreenTiles(
-  currentTile: PointWithState,
-  nextTile: PointWithState,
-  pointsWithState: PointWithState[],
-) {
-  const currentX = currentTile.point[0]
-  const currentY = currentTile.point[1]
-  const nextX = nextTile.point[0]
-  const nextY = nextTile.point[1]
-  if (currentX === nextX) {
-    // point on same x axis
-    if (currentY > nextY) {
-      for (let i = nextY + 1; i < currentY; i++) {
-        pointsWithState.push({ point: [currentX, i], state: 'green' })
-      }
-    } else {
-      for (let i = currentY + 1; i < nextY; i++) {
-        pointsWithState.push({ point: [currentX, i], state: 'green' })
-      }
-    }
-  } else {
-    // point on same y axis
-    if (currentX > nextX) {
-      for (let i = nextX + 1; i < currentX; i++) {
-        pointsWithState.push({ point: [i, currentY], state: 'green' })
-      }
-    } else {
-      for (let i = currentX + 1; i < nextX; i++) {
-        pointsWithState.push({ point: [i, currentY], state: 'green' })
-      }
-    }
-  }
-}
-
-function connectRedTilesWithGreen(pointsWithState: PointWithState[]) {
-  const initialLength = pointsWithState.length
-  for (let i = 0; i < initialLength; i++) {
-    const currentTile = pointsWithState[i]
-    let nextTile: PointWithState
-    if (i === initialLength - 1) {
-      // console.log('this should be the last one ill log some stuff')
-      // console.log('i: ', i)
-      // console.log('pointsWithState[0]: ', pointsWithState[0])
-      nextTile = pointsWithState[0]
-    } else {
-      nextTile = pointsWithState[i + 1]
-    }
-    addGreenTiles(currentTile, nextTile, pointsWithState)
-  }
-}
-
-function buildGrid(width: number, height: number): string[][] {
-  return Array.from({ length: height }, () => Array(width).fill('.'))
-}
-
-function floodOutside(grid: string[][]): boolean[][] {
-  const h = grid.length
-  const w = grid[0].length
-
-  const outside = Array.from({ length: h }, () => Array(w).fill(false))
-
-  const queue: [number, number][] = [[0, 0]]
-
-  while (queue.length) {
-    const [y, x] = queue.pop()!
-
-    if (
-      y < 0 ||
-      x < 0 ||
-      y >= h ||
-      x >= w ||
-      outside[y][x] ||
-      grid[y][x] === '#'
-    )
-      continue
-
-    outside[y][x] = true
-
-    queue.push([y - 1, x], [y + 1, x], [y, x - 1], [y, x + 1])
-  }
-
-  return outside
-}
-
 interface RectangleResult {
   from: Point
   to: Point
   area: number
 }
 
-function buildOutsidePrefixSum(outside: boolean[][]): number[][] {
-  const height = outside.length
-  const width = outside[0].length
-
-  const sum = Array.from({ length: height }, () => Array(width).fill(0))
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const isOutside = outside[y][x] ? 1 : 0
-      sum[y][x] =
-        isOutside +
-        (sum[y - 1]?.[x] ?? 0) +
-        (sum[y]?.[x - 1] ?? 0) -
-        (sum[y - 1]?.[x - 1] ?? 0)
-    }
-  }
-
-  return sum
-}
-
-function buildWallPrefixSum(grid: string[][]): number[][] {
-  const h = grid.length
-  const w = grid[0].length
-  const sum = Array.from({ length: h }, () => Array(w).fill(0))
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const isWall = grid[y][x] === '#' ? 1 : 0
-      sum[y][x] =
-        isWall +
-        (sum[y - 1]?.[x] ?? 0) +
-        (sum[y]?.[x - 1] ?? 0) -
-        (sum[y - 1]?.[x - 1] ?? 0)
-    }
-  }
-  return sum
-}
-
-function rectCount(
-  sum: number[][],
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-) {
-  return (
-    sum[y2][x2] -
-    (sum[y1 - 1]?.[x2] ?? 0) -
-    (sum[y2]?.[x1 - 1] ?? 0) +
-    (sum[y1 - 1]?.[x1 - 1] ?? 0)
-  )
-}
-
-function rectangleIsInside(
-  outsideSum: number[][],
-  wallSum: number[][],
+function rectangleIsInsideTyped(
+  outsideSum: Uint32Array,
+  wallSum: Uint32Array,
+  w: number,
   a: Point,
   b: Point,
   xIndex: Map<number, number>,
   yIndex: Map<number, number>,
-): boolean {
+) {
   const minX = Math.min(a[0], b[0])
   const maxX = Math.max(a[0], b[0])
   const minY = Math.min(a[1], b[1])
@@ -174,7 +33,7 @@ function rectangleIsInside(
   const cy1 = yIndex.get(minY)!
   const cy2 = yIndex.get(maxY)!
 
-  // interior only
+  // interior-only in compressed grid space
   const ix1 = cx1 + 1
   const ix2 = cx2 - 1
   const iy1 = cy1 + 1
@@ -182,16 +41,17 @@ function rectangleIsInside(
 
   if (ix1 > ix2 || iy1 > iy2) return false
 
-  if (rectCount(outsideSum, ix1, iy1, ix2, iy2) !== 0) return false
-  if (rectCount(wallSum, ix1, iy1, ix2, iy2) !== 0) return false
+  if (rectCount1D(outsideSum, w, ix1, iy1, ix2, iy2) !== 0) return false
+  if (rectCount1D(wallSum, w, ix1, iy1, ix2, iy2) !== 0) return false
 
   return true
 }
 
 function findLargestValidRectangle(
   points: Point[],
-  outsideSum: number[][],
-  wallSum: number[][],
+  outsideSum: Uint32Array,
+  wallSum: Uint32Array,
+  w: number,
   xIndex: Map<number, number>,
   yIndex: Map<number, number>,
 ): RectangleResult | null {
@@ -211,7 +71,9 @@ function findLargestValidRectangle(
 
       if (area <= bestArea) continue
 
-      if (rectangleIsInside(outsideSum, wallSum, a, b, xIndex, yIndex)) {
+      if (
+        rectangleIsInsideTyped(outsideSum, wallSum, w, a, b, xIndex, yIndex)
+      ) {
         bestArea = area
         best = { from: a, to: b, area }
       }
@@ -221,112 +83,145 @@ function findLargestValidRectangle(
   return best
 }
 
-function compressCoordinatesDense(points: Point[]) {
-  let minX = Infinity,
-    maxX = -Infinity
-  let minY = Infinity,
-    maxY = -Infinity
+function compressCoordinates(points: Point[]) {
+  const xs = new Set<number>()
+  const ys = new Set<number>()
 
   for (const [x, y] of points) {
-    minX = Math.min(minX, x)
-    maxX = Math.max(maxX, x)
-    minY = Math.min(minY, y)
-    maxY = Math.max(maxY, y)
+    xs.add(x)
+    xs.add(x - 1)
+    xs.add(x + 1)
+
+    ys.add(y)
+    ys.add(y - 1)
+    ys.add(y + 1)
   }
 
-  // Pad by 1 so flood fill can start “outside”
-  minX -= 1
-  maxX += 1
-  minY -= 1
-  maxY += 1
-
-  const xs: number[] = []
-  const ys: number[] = []
-
-  for (let x = minX; x <= maxX; x++) xs.push(x)
-  for (let y = minY; y <= maxY; y++) ys.push(y)
+  const xsArr = Array.from(xs).sort((a, b) => a - b)
+  const ysArr = Array.from(ys).sort((a, b) => a - b)
 
   const xIndex = new Map<number, number>()
   const yIndex = new Map<number, number>()
 
-  xs.forEach((x, i) => xIndex.set(x, i))
-  ys.forEach((y, i) => yIndex.set(y, i))
+  xsArr.forEach((x, i) => xIndex.set(x, i))
+  ysArr.forEach((y, i) => yIndex.set(y, i))
 
-  return { xs, ys, xIndex, yIndex }
+  return { xs: xsArr, ys: ysArr, xIndex, yIndex }
 }
 
-function drawBoundaryFromCells(
-  grid: string[][],
-  boundaryCells: Set<string>,
+function makeGrid(w: number, h: number) {
+  return new Uint8Array(w * h) // 0 empty, 1 wall
+}
+
+function idx(x: number, y: number, w: number) {
+  return y * w + x
+}
+
+function drawBoundaryFromVertices(
+  wall: Uint8Array,
+  w: number,
+  points: Point[],
   xIndex: Map<number, number>,
   yIndex: Map<number, number>,
 ) {
-  for (const key of boundaryCells) {
-    const [x, y] = key.split(',').map(Number)
-    const cx = xIndex.get(x)
-    const cy = yIndex.get(y)
-    if (cx === undefined || cy === undefined) continue
-    grid[cy][cx] = '#'
+  const n = points.length
+
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = points[i]
+    const [x2, y2] = points[(i + 1) % n]
+
+    const cx1 = xIndex.get(x1)!
+    const cy1 = yIndex.get(y1)!
+    const cx2 = xIndex.get(x2)!
+    const cy2 = yIndex.get(y2)!
+
+    const dx = Math.sign(cx2 - cx1)
+    const dy = Math.sign(cy2 - cy1)
+
+    let x = cx1
+    let y = cy1
+    wall[idx(x, y, w)] = 1
+
+    while (x !== cx2 || y !== cy2) {
+      x += dx
+      y += dy
+      wall[idx(x, y, w)] = 1
+    }
   }
+}
+
+function floodOutsideTyped(wall: Uint8Array, w: number, h: number) {
+  const outside = new Uint8Array(w * h) // 0/1
+  const stack: number[] = [0] // start at (0,0) => index 0
+
+  while (stack.length) {
+    const p = stack.pop()!
+    if (outside[p]) continue
+    if (wall[p]) continue
+
+    outside[p] = 1
+    const x = p % w
+    const y = (p / w) | 0
+
+    if (y > 0) stack.push(p - w)
+    if (y + 1 < h) stack.push(p + w)
+    if (x > 0) stack.push(p - 1)
+    if (x + 1 < w) stack.push(p + 1)
+  }
+
+  return outside
+}
+
+function buildPrefixSum(mask: Uint8Array, w: number, h: number) {
+  const sum = new Uint32Array(w * h)
+
+  for (let y = 0; y < h; y++) {
+    let rowAcc = 0
+    for (let x = 0; x < w; x++) {
+      rowAcc += mask[idx(x, y, w)]
+      const above = y > 0 ? sum[idx(x, y - 1, w)] : 0
+      sum[idx(x, y, w)] = rowAcc + above
+    }
+  }
+  return sum
+}
+
+function rectCount1D(
+  sum: Uint32Array,
+  w: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) {
+  const A = sum[idx(x2, y2, w)]
+  const B = y1 > 0 ? sum[idx(x2, y1 - 1, w)] : 0
+  const C = x1 > 0 ? sum[idx(x1 - 1, y2, w)] : 0
+  const D = x1 > 0 && y1 > 0 ? sum[idx(x1 - 1, y1 - 1, w)] : 0
+  return A - B - C + D
 }
 
 export function getResultForPartTwo(input: string) {
   const points = parseInput(input)
-  // const redBoundary: Point[] = [...points]
+  const { xs, ys, xIndex, yIndex } = compressCoordinates(points) // ✅ red only
+  console.log('compressed grid size:', xs.length, ys.length)
 
-  const pointsWithState: PointWithState[] = points.map((point) => ({
-    point,
-    state: 'red',
-  }))
+  const w = xs.length
+  const h = ys.length
 
-  connectRedTilesWithGreen(pointsWithState)
-  const boundaryCells = new Set<string>()
-  for (const { point } of pointsWithState)
-    boundaryCells.add(`${point[0]},${point[1]}`)
+  const wall = makeGrid(w, h)
+  drawBoundaryFromVertices(wall, w, points, xIndex, yIndex)
 
-  const allBoundaryPoints = pointsWithState.map((p) => p.point)
+  const outside = floodOutsideTyped(wall, w, h)
 
-  const { xs, ys, xIndex, yIndex } = compressCoordinatesDense(allBoundaryPoints)
-
-  const gridWidth = xs.length
-  const gridHeight = ys.length
-  const grid = buildGrid(gridWidth, gridHeight)
-
-  const boundary = new Set<string>()
-
-  for (const { point } of pointsWithState) {
-    boundary.add(`${point[0]},${point[1]}`)
-  }
-
-  drawBoundaryFromCells(grid, boundaryCells, xIndex, yIndex)
-
-  const outside = floodOutside(grid)
-  // DEBUG: check flood result
-  // let outsideCount = 0
-  // let wallCount = 0
-  // const h = grid.length
-  // const w = grid[0].length
-
-  // for (let y = 0; y < h; y++) {
-  //   for (let x = 0; x < w; x++) {
-  //     if (outside[y][x]) outsideCount++
-  //     if (grid[y][x] === '#') wallCount++
-  //   }
-  // }
-
-  // console.log({
-  //   gridSize: h * w,
-  //   outsideCount,
-  //   wallCount,
-  // })
-  const outsideSum = buildOutsidePrefixSum(outside)
-
-  const wallSum = buildWallPrefixSum(grid)
+  const outsideSum = buildPrefixSum(outside, w, h)
+  const wallSum = buildPrefixSum(wall, w, h)
 
   const rectangleResult = findLargestValidRectangle(
     points,
     outsideSum,
     wallSum,
+    w,
     xIndex,
     yIndex,
   )
